@@ -25,7 +25,7 @@ class ComingSoonResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str = "ok"
     service: str = "inventory-ai"
-    version: str = "0.1.0"
+    version: str = "0.2.0"
 
 
 class DemoLoginRequest(BaseModel):

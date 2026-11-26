@@ -6,9 +6,9 @@ import { clearSession, getUser } from "@/lib/auth";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", enabled: true },
-  { href: "/products", label: "Products", enabled: false },
-  { href: "/purchase-orders", label: "Purchase orders", enabled: false },
-  { href: "/stock", label: "Stock", enabled: false },
+  { href: "/products", label: "Products", enabled: true },
+  { href: "/purchase-orders", label: "Purchase orders", enabled: true },
+  { href: "/stock", label: "Stock", enabled: true },
   { href: "/transfers", label: "Transfers", enabled: false },
   { href: "/counts", label: "Counts", enabled: false },
   { href: "/suppliers", label: "Suppliers", enabled: false },

@@ -1,4 +1,4 @@
-"""Coming Soon stubs for Inventory AI API groups (auth + org required)."""
+"""Coming Soon stubs for remaining Inventory AI API groups (auth required)."""
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
@@ -17,25 +17,8 @@ def _soon(feature: str) -> JSONResponse:
     )
 
 
-@router.get("/products")
-@router.post("/products")
-async def products_collection(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
-    return _soon("products")
-
-
-@router.get("/products/{item_id}")
-@router.patch("/products/{item_id}")
-@router.delete("/products/{item_id}")
-async def products_item(
-    item_id: str,
-    _auth: AuthContext = Depends(get_auth_context),
-) -> JSONResponse:
-    return _soon("products")
-
-
-@router.get("/categories")
 @router.post("/categories")
-async def categories_collection(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
+async def categories_create(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
     return _soon("categories")
 
 
@@ -49,9 +32,8 @@ async def categories_item(
     return _soon("categories")
 
 
-@router.get("/units")
 @router.post("/units")
-async def units_collection(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
+async def units_create(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
     return _soon("units")
 
 
@@ -65,9 +47,8 @@ async def units_item(
     return _soon("units")
 
 
-@router.get("/locations")
 @router.post("/locations")
-async def locations_collection(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
+async def locations_create(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
     return _soon("locations")
 
 
@@ -97,48 +78,35 @@ async def suppliers_item(
     return _soon("suppliers")
 
 
-@router.get("/purchase-orders")
 @router.post("/purchase-orders")
-async def purchase_orders_collection(
+async def purchase_orders_create(
     _auth: AuthContext = Depends(get_auth_context),
 ) -> JSONResponse:
-    return _soon("purchase-orders")
+    return _soon("purchase-orders-write")
 
 
-@router.get("/purchase-orders/{item_id}")
 @router.patch("/purchase-orders/{item_id}")
 @router.delete("/purchase-orders/{item_id}")
-async def purchase_orders_item(
+async def purchase_orders_mutate(
     item_id: str,
     _auth: AuthContext = Depends(get_auth_context),
 ) -> JSONResponse:
-    return _soon("purchase-orders")
+    return _soon("purchase-orders-write")
 
 
 @router.get("/receipts")
-@router.post("/receipts")
-async def receipts_collection(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
-    return _soon("receipts")
-
-
 @router.get("/receipts/{item_id}")
 @router.patch("/receipts/{item_id}")
-async def receipts_item(
-    item_id: str,
+async def receipts_read(
+    item_id: str | None = None,
     _auth: AuthContext = Depends(get_auth_context),
 ) -> JSONResponse:
-    return _soon("receipts")
+    return _soon("receipts-history")
 
 
-@router.get("/stock/balances")
-async def stock_balances(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
-    return _soon("stock/balances")
-
-
-@router.get("/stock/movements")
 @router.post("/stock/movements")
-async def stock_movements(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
-    return _soon("stock/movements")
+async def stock_movements_write(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
+    return _soon("stock/movements-adjust")
 
 
 @router.get("/stock/counts")
