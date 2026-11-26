@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthGate } from "@/components/AuthGate";
+import { EmptyState } from "@/components/EmptyState";
+import { StatusBanner } from "@/components/StatusBanner";
 import { apiFetch, ApiRequestError } from "@/lib/api";
 
 type RadarItem = {
@@ -97,8 +99,11 @@ function RadarView() {
         Refresh radar
       </button>
 
-      {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+      <StatusBanner error={error} />
       {loading && <p className="text-sm text-[var(--muted)]">Computing risk scores…</p>}
+      {!loading && !error && items.length === 0 ? (
+        <EmptyState title="No radar items" description="Seeded stock signals may be empty." />
+      ) : null}
 
       {formula && (
         <div className="rounded border border-[var(--border)] bg-[var(--surface)]/60 px-4 py-3 font-mono text-xs leading-relaxed text-[var(--muted)]">

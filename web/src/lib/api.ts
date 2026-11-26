@@ -136,3 +136,125 @@ export type StockMovement = {
   reason: string | null;
   created_at: string;
 };
+
+export type Location = {
+  id: string;
+  code: string;
+  name: string;
+  address: string | null;
+  bin_shelf_notes: string | null;
+};
+
+export type DashboardSummary = {
+  generated_at: string;
+  stock_value: string;
+  low_stock_items: number;
+  out_of_stock_items: number;
+  pending_purchase_orders: number;
+  recent_movement_count: number;
+  product_count: number;
+  location_count: number;
+};
+
+export type InventoryReport = {
+  generated_at: string;
+  stock_value: string;
+  balance_rows: number;
+  low_stock_items: number;
+  out_of_stock_items: number;
+  pending_purchase_orders: number;
+  recent_movement_count: number;
+  stock_on_hand: {
+    sku: string;
+    name: string;
+    location_code: string;
+    location_name: string;
+    quantity: string;
+    unit_cost: string;
+    extended_value: string;
+    reorder_point: string;
+    is_low_stock: boolean;
+  }[];
+  recent_movements: {
+    id: string;
+    created_at: string;
+    movement_type: string;
+    sku: string | null;
+    product_name: string | null;
+    location_code: string | null;
+    quantity: string;
+    balance_after: string;
+  }[];
+};
+
+export type TransferSummary = {
+  id: string;
+  status: string;
+  source_location_code: string | null;
+  source_location_name: string | null;
+  destination_location_code: string | null;
+  destination_location_name: string | null;
+  line_count: number;
+  notes: string | null;
+  created_at: string;
+};
+
+export type TransferDetail = TransferSummary & {
+  source_location_id: string;
+  destination_location_id: string;
+  lines: {
+    id: string;
+    product_id: string;
+    product_sku: string | null;
+    product_name: string | null;
+    quantity: string;
+  }[];
+};
+
+export type CountSummary = {
+  id: string;
+  status: string;
+  location_code: string | null;
+  location_name: string | null;
+  line_count: number;
+  notes: string | null;
+  created_at: string;
+  approved_at: string | null;
+};
+
+export type CountDetail = CountSummary & {
+  location_id: string;
+  lines: {
+    id: string;
+    product_id: string;
+    product_sku: string | null;
+    product_name: string | null;
+    expected_quantity: string;
+    counted_quantity: string;
+    variance: string;
+    variance_reason: string | null;
+  }[];
+};
+
+/** Download a CSV report using the current session token. */
+export async function downloadCsv(path: string, filename: string): Promise<void> {
+  const token = getToken();
+  const headers = new Headers();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`${API_BASE}${path}`, { headers });
+  if (res.status === 401) {
+    clearSession();
+    if (typeof window !== "undefined") window.location.href = "/login";
+    throw new ApiRequestError(401, "unauthorized", "Session expired");
+  }
+  if (!res.ok) {
+    throw new ApiRequestError(res.status, "http_error", `CSV export failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

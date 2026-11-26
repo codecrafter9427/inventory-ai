@@ -9,14 +9,14 @@ const NAV = [
   { href: "/products", label: "Products", enabled: true },
   { href: "/purchase-orders", label: "Purchase orders", enabled: true },
   { href: "/stock", label: "Stock", enabled: true },
+  { href: "/transfers", label: "Transfers", enabled: true },
+  { href: "/counts", label: "Counts", enabled: true },
+  { href: "/reports", label: "Reports", enabled: true },
   { href: "/reorder", label: "Reorder AI", enabled: true },
   { href: "/stockout-radar", label: "Stockout Radar", enabled: true },
   { href: "/ai-ask", label: "AI Q&A", enabled: true },
-  { href: "/transfers", label: "Transfers", enabled: false },
-  { href: "/counts", label: "Counts", enabled: false },
   { href: "/suppliers", label: "Suppliers", enabled: false },
   { href: "/locations", label: "Locations", enabled: false },
-  { href: "/reports", label: "Reports", enabled: false },
   { href: "/settings", label: "Settings", enabled: false },
 ] as const;
 
@@ -39,7 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="flex flex-col gap-1 text-sm">
           {NAV.map((item) => {
-            const active = pathname === item.href;
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             if (!item.enabled) {
               return (
                 <span

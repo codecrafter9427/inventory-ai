@@ -8,9 +8,9 @@ Stock and warehouse operations for small retailers, distributors, and small ware
 
 | Role | Code | Capabilities |
 |------|------|----------------|
-| Owner / Admin | `owner` | Settings, users, all reports; catalog + receive; confirm AI draft PO |
-| Inventory Manager | `inventory_manager` | Catalog, suppliers, purchasing, stock; receive; confirm AI draft PO |
-| Staff | `staff` | Receiving, counts, transfers, dispatch; limited settings (no catalog create / no AI draft PO) |
+| Owner / Admin | `owner` | Settings, users, all reports; catalog + receive; confirm AI draft PO; approve counts |
+| Inventory Manager | `inventory_manager` | Catalog, suppliers, purchasing, stock; receive; confirm AI draft PO; approve counts |
+| Staff | `staff` | Receiving, counts (submit), transfers, dispatch; limited settings (no catalog create / no AI draft PO / no count approve) |
 
 Milestone 2+: mutating endpoints enforce organization match and role gates (`forbidden_role` / org-scoped 404).
 
@@ -33,7 +33,11 @@ UUID primary keys, UTC timestamps, decimal monetary values, organization scoping
 | `/purchase-orders` | List + detail read implemented; write Coming Soon (except AI draft confirm) |
 | `/receipts` | `POST` receive implemented (atomic balance + ledger) |
 | `/stock/balances`, `/stock/movements` | Read implemented |
-| `/suppliers`, `/stock/counts`, `/stock/transfers`, `/reports/inventory` | Coming Soon (501; auth required) |
+| `/stock/transfers` | Thin slice: list/create/receive (qty preserved) |
+| `/stock/counts` | Thin slice: create/submit/approve (variance reason required) |
+| `/reports/inventory` (+ CSV exports) | Implemented (deterministic) |
+| `/dashboard/summary` | Implemented (KPI tiles) |
+| `/suppliers` | Coming Soon (501; auth required) |
 | `/ai/reorder-recommendations` | Implemented (signals + DemoAI/Ollama narration; auth) |
 | `/ai/inventory-question` | Implemented (allowlisted read tools; auth) |
 | `/ai/stockout-radar` | Implemented (deterministic formula + AI narration; auth) |
@@ -84,28 +88,35 @@ Endpoint: `POST /api/v1/ai/stockout-radar`.
 - [x] Tests: DemoAI paths, Stockout Radar determinism, auth on AI endpoints
 - [x] README: Ollama optional setup + demo without Ollama
 
-### Full MVP (later milestones)
+### Milestone 4 (met)
 
-1. Create product on web and search it on mobile.
-2. Receive PO atomically updates balance and immutable ledger. *(web path done in M2)*
+- [x] Polish primary web flows: loading/error/empty, confirmations, disabled Coming Soon nav
+- [x] Inventory reports + CSV export (stock-on-hand / movements) — deterministic
+- [x] Thin transfers + stock-count approval slice (variance reason required)
+- [x] Dashboard KPI tiles from seeded data
+- [x] Expanded pytest coverage; lint/typecheck commands documented
+- [x] README complete + DEMO.md recording script
+- [x] Mobile: demo login + product search calling same APIs (code); Android Studio sync documented
+
+### Full MVP (later)
+
+1. Create product on web and search it on mobile. *(web + mobile search code in M4)*
+2. Receive PO atomically updates balance and immutable ledger. *(done)*
 3. Barcode scan opens the correct product (ML Kit; manual search fallback).
-4. Count variance requires approval and reason.
-5. Transfer preserves total quantity across locations.
-6. AI uses seeded records and only creates a draft PO after user confirmation. *(done in M3)*
-7. Stockout Radar shows formula + assumptions; never claims certainty. *(done in M3)*
-8. Local setup works with Docker Postgres, demo login, Ollama optional / DemoAI fallback. *(done in M3)*
+4. Count variance requires approval and reason. *(thin web/API slice in M4)*
+5. Transfer preserves total quantity across locations. *(thin slice in M4)*
+6. AI uses seeded records and only creates a draft PO after user confirmation. *(done)*
+7. Stockout Radar shows formula + assumptions; never claims certainty. *(done)*
+8. Local setup works with Docker Postgres, demo login, Ollama optional / DemoAI fallback. *(done)*
 
-## Backlog
-
-### Milestone 4
+## Backlog (post-M4)
 
 - ML Kit barcode scanning
 - Offline queue for count/receiving drafts + conflict UI
 - Settings (org, roles, units, reorder defaults)
-- Reports + CSV export
-- Broader unit/API/E2E coverage and demo recording
-- Stock transfers + count sessions (full workflows)
-- Mobile product search vertical slice
+- Suppliers / locations write APIs
+- Full multi-line transfer/count mobile workflows
+- Broader E2E / recorded demo video
 
 ## Non-goals (MVP)
 

@@ -1,1 +1,1 @@
-"""Domain services for Inventory AI (receiving, signals, Stockout Radar, draft PO)."""
+"""Domain services for Inventory AI (receiving, signals, reports, transfers, counts)."""

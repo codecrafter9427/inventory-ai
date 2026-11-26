@@ -1,36 +1,64 @@
 # Inventory AI
 
-Stock and warehouse operations for small retailers, distributors, and small warehouses. Local-first portfolio MVP — no paid APIs required.
+Stock and warehouse operations for small retailers, distributors, and small warehouses. Local-first portfolio MVP — **no paid APIs required**.
 
 ## Purpose
 
 Help owners and inventory staff track catalog, locations, purchasing, receiving, counts, transfers, and stock movements. Differentiator: **Stockout Radar** — a transparent risk score from on-hand stock, average daily movement, supplier lead time, and safety stock (formula shown; no certainty claims).
 
-**Milestone 3 (current):** AI provider + DemoAI offline fallback, reorder recommendations with draft-PO confirmation, allowlisted inventory Q&A, Stockout Radar UI, API tests. Mobile / barcode / offline remain M4.
+**Milestone 4 (current):** polish (loading/error/empty/confirmations), dashboard KPI tiles, inventory reports + CSV export, thin transfers + count-approval slice, expanded tests, DEMO.md, mobile product search (code; Android Studio sync required to run).
 
-## Tech stack
+## Architecture
+
+```
+Browser (Next.js)  ─┐
+                    ├─► FastAPI /api/v1 ─► PostgreSQL (Docker :5435)
+Android Compose   ─┘         │
+                             ├─ DemoAIProvider (default) / optional Ollama
+                             └─ Deterministic stock math (balances, reports, radar formula)
+```
 
 | Layer | Stack |
 |-------|--------|
-| Web | Next.js + TypeScript |
-| Backend | FastAPI, Pydantic, SQLAlchemy, Alembic, REST JSON under `/api/v1` |
-| Database | PostgreSQL (UUID PKs, UTC timestamps, decimal money) via Docker Compose |
-| AI | `AIProvider` + deterministic `DemoAIProvider`; optional local Ollama adapter |
-| Mobile | Kotlin + Jetpack Compose (native Android — not WebView); optional for M3 |
+| Web | Next.js 15 + TypeScript + Tailwind |
+| Backend | FastAPI, Pydantic, SQLAlchemy, Alembic, REST under `/api/v1` |
+| Database | PostgreSQL (UUID PKs, UTC timestamps, decimal money) |
+| AI | `AIProvider` + deterministic `DemoAIProvider`; optional local Ollama |
+| Mobile | Kotlin + Jetpack Compose (native — not WebView) |
 | Auth | Local demo login → JWT (organization + role claims) |
 
-## Project layout
+### Project layout
 
 ```
 products/inventory-ai/
   README.md
+  DEMO.md                 # Scripted demo / recording checklist
   MVP_SPEC.md
   .env.example
   docker-compose.yml      # PostgreSQL only (host port 5435)
   backend/                # FastAPI + models + Alembic + seed + tests
-  web/                    # Next.js — catalog / receive / AI / Stockout Radar
-  mobile/                 # Android Compose shell (optional)
+  web/                    # Next.js UI
+  mobile/                 # Android Compose (Studio sync to run)
 ```
+
+## Features (M4)
+
+| Area | Status |
+|------|--------|
+| Demo login + org/role JWT | Done |
+| Products CRUD / search | Done |
+| PO list + atomic receive | Done |
+| Stock balances + movements | Done |
+| Dashboard KPI tiles | Done |
+| Reports + CSV (stock-on-hand, movements) | Done |
+| Transfers (create → receive; qty preserved) | Thin slice |
+| Stock counts (submit → approve w/ variance reason) | Thin slice |
+| Reorder AI + confirm draft PO | Done |
+| Stockout Radar | Done |
+| Inventory Q&A (allowlisted tools) | Done |
+| Mobile login + product search + stock by SKU | Code done; device needs Studio |
+| Suppliers / locations write / settings | Coming Soon |
+| ML Kit barcode / offline queue | Coming Soon |
 
 ## Setup
 
@@ -39,8 +67,8 @@ products/inventory-ai/
 - Docker (PostgreSQL)
 - Python 3.12+
 - Node.js 20+ (web)
-- Android Studio / JDK 17+ (mobile — optional)
-- [Ollama](https://ollama.com) — **optional** (demo works without it)
+- Android Studio / JDK 17+ (mobile — **Gradle sync required to run**)
+- [Ollama](https://ollama.com) — **optional**
 
 ### 1. Environment
 
@@ -51,7 +79,7 @@ cp .env.example backend/.env
 cp web/.env.example web/.env.local
 ```
 
-Default DB URL uses host port **5435** so it does not clash with other local Postgres containers.
+Default DB URL uses host port **5435**.
 
 ### 2. Database
 
@@ -74,14 +102,20 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 - Health: `GET http://localhost:8000/health`
 - OpenAPI: `http://localhost:8000/docs`
-- Demo login: `POST /api/v1/auth/demo-login`
-- AI: `POST /api/v1/ai/reorder-recommendations`, `/ai/inventory-question`, `/ai/stockout-radar`, `/ai/confirm-draft-po`
 
-### 4. Tests
+### 4. Tests / quality
 
 ```bash
 cd backend
 pytest tests -q
+# Optional format check if ruff/black installed locally — pytest is the gate
+```
+
+```bash
+cd web
+npm install
+npm run lint
+npx tsc --noEmit
 ```
 
 ### 5. Web
@@ -92,11 +126,11 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. Sign in with demo credentials, then use **Products**, **Purchase orders**, **Stock**, **Reorder AI**, **Stockout Radar**, and **AI Q&A**.
+Open `http://localhost:3000`.
 
-### 6. Mobile (Android) — optional for M3
+### 6. Mobile (Android)
 
-Open `mobile/` in Android Studio when ready. Shell only for now; device run can wait.
+See `mobile/README.md`. Open `mobile/` in **Android Studio**, sync Gradle, run on emulator (`10.0.2.2:8000`). Device run without Studio sync is a known limitation.
 
 ## Demo credentials
 
@@ -106,68 +140,64 @@ Password for all seeded users: `demo-password`
 |-------|------|
 | `admin@demo.inventory.local` | Owner / Admin |
 | `manager@demo.inventory.local` | Inventory Manager |
-| `staff@demo.inventory.local` | Staff (can receive; cannot create products or confirm AI draft POs) |
-| `other@demo.inventory.local` | Owner of a second org (tenant isolation demos) |
+| `staff@demo.inventory.local` | Staff (receive/transfers/counts; no catalog create / no AI draft PO / no count approve) |
+| `other@demo.inventory.local` | Owner of a second org (tenant isolation) |
 
-Seed minimums (primary org `demo-retail`): **30 products**, **3 locations**, **5 suppliers**, **8 purchase orders**, opening/receive/dispatch **movement history** (including low-stock rows for AI demos).
+Seed minimums (primary org `demo-retail`): **30 products**, **3 locations**, **5 suppliers**, **8 purchase orders**, movement history (including low-stock rows for AI demos).
 
-## Demo steps (Milestone 3 AI slice)
+## Demo steps
 
-1. Start Postgres, migrate, seed, and run the API (`uvicorn` on `:8000`). Default `AI_PROVIDER=demo` — **no Ollama required**.
-2. Start the web app (`npm run dev` → `http://localhost:3000`).
-3. Sign in as `admin@demo.inventory.local` / `demo-password`.
-4. **Reorder AI** — review recommendations (stock, avg daily movement, lead time, reorder point + assumptions). Select lines → **Confirm draft PO** → verify a `draft` PO appears under Purchase orders. Stock balances are unchanged.
-5. **Stockout Radar** — open the differentiator page; confirm formula, inputs, reasons, and assumptions. Scores are risk signals, not predictions.
-6. **AI Q&A** — ask e.g. “Which products are low stock?” or “Stockout risk for SKU-009”. Answers are labeled AI content from allowlisted read tools only.
-7. (Optional) Sign in as `staff@demo.inventory.local` and confirm draft-PO confirmation is role-denied.
+Full recording checklist: **[DEMO.md](./DEMO.md)**.
 
-## AI (Ollama optional + demo fallback)
+1. Start Postgres, migrate, seed, API (`:8000`). `AI_PROVIDER=demo`.
+2. Start web (`npm run dev`).
+3. Sign in as admin → **Dashboard** KPI tiles.
+4. **Products** → search/create; **Purchase orders** → confirm receive.
+5. **Stock** → balances + ledger; **Transfers** → create + receive; **Counts** → approve variance with reason.
+6. **Reports** → CSV stock-on-hand / movements.
+7. **Reorder AI** → confirm draft PO (stock unchanged); **Stockout Radar**; **AI Q&A**.
+
+## AI (demo + optional Ollama)
 
 ### Demo without Ollama (default)
 
 ```bash
-# in .env / backend/.env
 AI_PROVIDER=demo
 ```
 
-`DemoAIProvider` returns deterministic explanations over the same computed signals and allowlisted tools. Works fully offline.
+`DemoAIProvider` returns deterministic explanations over computed signals and allowlisted tools.
 
 ### Optional local Ollama
 
-1. Install [Ollama](https://ollama.com) and pull a local open model, e.g. `ollama pull llama3.2`.
-2. Ensure Ollama is listening (default `http://localhost:11434`).
-3. Set:
+1. Install Ollama; `ollama pull llama3.2`
+2. Set `AI_PROVIDER=ollama`, `OLLAMA_BASE_URL=http://localhost:11434`, `OLLAMA_MODEL=llama3.2`
+3. Restart API — invalid/down Ollama **falls back** to DemoAI
 
-```bash
-AI_PROVIDER=ollama
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2
-```
+Rules: backend-only model calls; typed schemas; Q&A allowlisted read tools; AI never changes stock; draft PO only after `confirm=true`; Stockout Radar shows formula (no certainty claims).
 
-4. Restart the API. If Ollama is down or returns invalid JSON, the adapter **falls back** to `DemoAIProvider`.
+## Prototype security notes
 
-Rules:
-
-- Backend-only model calls; typed schemas; validated envelopes.
-- Q&A uses allowlisted read tools with org auth before execution.
-- AI never changes stock or owns authoritative balances.
-- Draft PO is created only after explicit `confirm=true` (owner / inventory_manager).
-- Label AI content in the UI; no certainty claims on Stockout Radar.
+- Demo JWT with env `JWT_SECRET` placeholder — not production SSO.
+- Env vars / `.env.example` only; never commit real secrets.
+- Org scoping enforced server-side; role gates on mutations.
+- AI tools org-authorized before execution; limited prototype rate limiting.
+- Cleartext HTTP allowed on Android emulator for local demo only.
+- Not hardened for internet exposure, multi-tenant SaaS, or compliance audits.
 
 ## Milestone backlog
 
-1. **Done (M1)** — env, Docker Postgres, models, migrations, demo login + roles, org scoping, seed, health, smoke tests.
-2. **Done (M2)** — products CRUD/search; PO receive → atomic balance + immutable ledger; stock balances/movements; role-gated mutations; web vertical slice; API tests.
-3. **Done (M3)** — DemoAI + optional Ollama; reorder assistant + draft PO confirmation; inventory Q&A; Stockout Radar API + UI; AI auth/formula tests.
-4. **M4** — offline queue, ML Kit barcode, settings polish, reports/CSV, broader E2E/demo recording, mobile product search.
+1. **Done (M1)** — env, Docker Postgres, models, migrations, demo login, seed, smoke tests.
+2. **Done (M2)** — products CRUD; PO receive → balance + ledger; stock reads; role gates; web slice.
+3. **Done (M3)** — DemoAI + Ollama; reorder + draft PO; Q&A; Stockout Radar; AI tests.
+4. **Done (M4)** — polish, KPIs, reports/CSV, thin transfers/counts, tests, DEMO.md, mobile search code.
+5. **Later** — ML Kit barcode, offline queue, settings, suppliers write, full mobile ops, E2E recording.
 
-## Known limitations (M3)
+## Known limitations
 
-- Transfers, stock counts, supplier/location write APIs, and reports remain **Coming Soon** (501 stubs).
-- General PO create/edit UI is not wired; AI confirm creates `draft` POs; receiving uses receivable seeded/API POs.
-- Mobile product search / barcode path deferred.
-- Auth is demo JWT only (local secret; not production SSO).
-- Ollama quality depends on the local model; invalid output falls back to DemoAI.
-- Prototype security: env placeholders, limited rate limiting, no production hardening.
+- Suppliers / locations **write** APIs and Settings remain Coming Soon.
+- Transfer/count UIs are thin slices (not full multi-line offline workflows).
+- General PO create/edit UI not wired (AI draft + seeded receivable POs).
+- Mobile: barcode, receive, offline queue deferred; **Android Studio sync required** to run.
+- Auth is demo JWT only; Ollama quality depends on local model.
 
 See `MVP_SPEC.md` for entities, API groups, and acceptance criteria.

@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 private data class Shortcut(val route: String, val label: String, val enabled: Boolean)
 
 private val shortcuts = listOf(
-    Shortcut("products", "Product search", enabled = false),
+    Shortcut("products", "Product search", enabled = true),
     Shortcut("scan", "Scan barcode", enabled = false),
     Shortcut("receive", "Receive PO", enabled = false),
     Shortcut("count", "Stock count", enabled = false),
@@ -51,7 +51,7 @@ fun HomeScreen(
             modifier = Modifier.padding(top = 4.dp),
         )
         Text(
-            text = "Home shortcuts (stubs). Disabled items open Coming Soon screens when tapped via temporary preview, or stay disabled.",
+            text = "Product search calls the same backend as web. Other workflows stay Coming Soon (disabled).",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
@@ -71,11 +71,11 @@ fun HomeScreen(
                     }
                 } else {
                     OutlinedButton(
-                        onClick = { onOpenShortcut(item.route) },
-                        enabled = true,
+                        onClick = { },
+                        enabled = false,
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
                     ) {
                         Text("${item.label} — Coming Soon")

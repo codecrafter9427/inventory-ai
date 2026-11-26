@@ -2,6 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AuthGate } from "@/components/AuthGate";
+import { EmptyState } from "@/components/EmptyState";
+import { StatusBanner } from "@/components/StatusBanner";
 import {
   apiFetch,
   ApiRequestError,
@@ -80,13 +82,13 @@ function StockView() {
         </button>
       </form>
 
-      {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
+      <StatusBanner error={error} />
       {loading ? <p className="text-[var(--muted)]">Loading stock…</p> : null}
 
       <div>
         <h3 className="mb-3 text-lg font-semibold">Balances</h3>
         {!loading && balances.length === 0 ? (
-          <p className="text-[var(--muted)]">No balances found.</p>
+          <EmptyState title="No balances found" description="Receive a PO or adjust filters." />
         ) : (
           <div className="overflow-x-auto rounded border border-[var(--border)]">
             <table className="w-full min-w-[560px] text-left text-sm">
@@ -118,7 +120,7 @@ function StockView() {
       <div>
         <h3 className="mb-3 text-lg font-semibold">Recent movements</h3>
         {!loading && movements.length === 0 ? (
-          <p className="text-[var(--muted)]">No movements yet.</p>
+          <EmptyState title="No movements yet" />
         ) : (
           <div className="overflow-x-auto rounded border border-[var(--border)]">
             <table className="w-full min-w-[640px] text-left text-sm">

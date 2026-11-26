@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { AuthGate } from "@/components/AuthGate";
+import { StatusBanner } from "@/components/StatusBanner";
 import { apiFetch, ApiRequestError } from "@/lib/api";
 
 type AIEnvelope = {
@@ -98,7 +99,7 @@ function AskView() {
         </button>
       </form>
 
-      {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+      <StatusBanner error={error} />
 
       {data && (
         <article className="space-y-3 rounded border border-[var(--border)] bg-[var(--bg-elevated)]/80 p-4">

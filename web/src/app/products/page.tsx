@@ -2,6 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AuthGate } from "@/components/AuthGate";
+import { EmptyState } from "@/components/EmptyState";
+import { StatusBanner } from "@/components/StatusBanner";
 import {
   apiFetch,
   ApiRequestError,
@@ -254,12 +256,15 @@ function ProductsView() {
         </button>
       </form>
 
-      {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
+      <StatusBanner error={error} />
 
       {loading ? (
         <p className="text-[var(--muted)]">Loading products…</p>
       ) : items.length === 0 ? (
-        <p className="text-[var(--muted)]">No products match.</p>
+        <EmptyState
+          title="No products match"
+          description="Try another search or create a product."
+        />
       ) : (
         <div className="overflow-x-auto rounded border border-[var(--border)]">
           <table className="w-full min-w-[640px] text-left text-sm">

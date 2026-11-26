@@ -2,6 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AuthGate } from "@/components/AuthGate";
+import { EmptyState } from "@/components/EmptyState";
+import { StatusBanner } from "@/components/StatusBanner";
 import {
   apiFetch,
   ApiRequestError,
@@ -87,6 +89,11 @@ function PurchaseOrdersView() {
         return;
       }
 
+      const ok = window.confirm(
+        `Receive ${lines.length} line(s) against ${detail.po_number}? Stock balance and ledger will update.`,
+      );
+      if (!ok) return;
+
       const result = await apiFetch<{ status: string; po_number: string }>("/receipts", {
         method: "POST",
         body: JSON.stringify({
@@ -119,14 +126,18 @@ function PurchaseOrdersView() {
         </p>
       </header>
 
-      {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
-      {message ? <p className="text-sm text-[var(--accent)]">{message}</p> : null}
+      <StatusBanner error={error} success={message} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
           <h3 className="mb-2 text-sm uppercase tracking-wide text-[var(--muted)]">Orders</h3>
           {loading ? (
             <p className="text-[var(--muted)]">Loading…</p>
+          ) : items.length === 0 ? (
+            <EmptyState
+              title="No purchase orders"
+              description="Seed data includes receivable POs, or confirm an AI draft."
+            />
           ) : (
             <ul className="space-y-2">
               {items.map((po) => (

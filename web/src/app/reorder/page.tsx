@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthGate } from "@/components/AuthGate";
+import { EmptyState } from "@/components/EmptyState";
+import { StatusBanner } from "@/components/StatusBanner";
 import { apiFetch, ApiRequestError } from "@/lib/api";
 
 type ReorderLine = {
@@ -143,9 +145,14 @@ function ReorderView() {
         </button>
       </div>
 
-      {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-      {success && <p className="text-sm text-[var(--accent)]">{success}</p>}
+      <StatusBanner error={error} success={success} />
       {loading && <p className="text-sm text-[var(--muted)]">Loading recommendations…</p>}
+      {!loading && !error && recommendations.length === 0 ? (
+        <EmptyState
+          title="No actionable reorder candidates"
+          description="Stock may already be above reorder points."
+        />
+      ) : null}
 
       {data && (
         <div className="space-y-2 text-sm text-[var(--muted)]">
