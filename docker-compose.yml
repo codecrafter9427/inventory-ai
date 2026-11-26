@@ -1,0 +1,21 @@
+# Local PostgreSQL only — no paid services
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: inventory-ai-db
+    environment:
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory
+      POSTGRES_DB: inventory_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - inventory_ai_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory -d inventory_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  inventory_ai_pgdata:

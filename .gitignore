@@ -1,0 +1,16 @@
+.env
+.env.local
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/node_modules/
+web/.next/
+web/out/
+**/.DS_Store
+mobile/.gradle/
+mobile/**/build/
+mobile/local.properties
+mobile/.idea/
+*.iml
+.idea/
