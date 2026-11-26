@@ -21,30 +21,24 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+      if (res.status === 401) {
+        const data = await res.json().catch(() => null);
+        setError(data?.error?.message ?? "Invalid email or password");
+        return;
+      }
       if (!res.ok) {
-        // Offline / backend-down fallback for shell demos
-        saveSession("demo-token-local", {
-          email,
-          role: "owner",
-          displayName: "Demo Owner (offline)",
-        });
-        router.push("/dashboard");
+        setError(`Login failed (${res.status}). Is the API running on :8000?`);
         return;
       }
       const data = await res.json();
       saveSession(data.access_token, {
-        email,
+        email: data.email ?? email,
         role: data.role,
         displayName: data.display_name,
       });
       router.push("/dashboard");
     } catch {
-      saveSession("demo-token-local", {
-        email,
-        role: "owner",
-        displayName: "Demo Owner (offline)",
-      });
-      router.push("/dashboard");
+      setError("Cannot reach API. Start backend (uvicorn on :8000) and try again.");
     } finally {
       setLoading(false);
     }
@@ -58,7 +52,7 @@ export default function LoginPage() {
           Inventory AI
         </h1>
         <p className="mt-3 text-[var(--muted)]">
-          Demo login shell. Backend optional — offline fallback keeps the UI walkthrough working.
+          Demo login against the local API. Use seeded credentials (see README).
         </p>
         <form
           onSubmit={onSubmit}

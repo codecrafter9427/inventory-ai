@@ -1,4 +1,4 @@
-# Inventory AI — MVP Specification (Scaffold)
+# Inventory AI — MVP Specification
 
 ## Purpose
 
@@ -6,55 +6,52 @@ Stock and warehouse operations for small retailers, distributors, and small ware
 
 ## Roles
 
-| Role | Capabilities |
-|------|----------------|
-| Owner / Admin | Settings, users, all reports |
-| Inventory Manager | Catalog, suppliers, purchasing, stock |
-| Staff | Receiving, counts, transfers, dispatch; limited settings |
+| Role | Code | Capabilities |
+|------|------|----------------|
+| Owner / Admin | `owner` | Settings, users, all reports |
+| Inventory Manager | `inventory_manager` | Catalog, suppliers, purchasing, stock |
+| Staff | `staff` | Receiving, counts, transfers, dispatch; limited settings |
 
-Scaffold today: demo login returns `owner` for documented credentials; otherwise `staff`. Role enforcement on business endpoints is Coming Soon.
+Milestone 1: demo login authenticates seeded users and returns JWT with `role` + `organization_id`. Protected endpoints require Bearer token; organization lookups enforce tenant match (403 on wrong org). Fine-grained mutation permissions are Milestone 2.
 
-## Entities (planned)
+## Entities (schema implemented)
 
 Organization, User, Role, Product, Category, Unit, Location, Supplier, PurchaseOrder, PurchaseOrderLine, StockBalance, StockMovement, StockCount, StockCountLine, StockTransfer, StockTransferLine, AuditEvent.
 
-UUID primary keys, UTC timestamps, organization scoping on every business record.
+UUID primary keys, UTC timestamps, decimal monetary values, organization scoping on every business record.
 
 ## API groups (`/api/v1`)
 
-| Group | Scaffold status |
-|-------|-----------------|
-| `/auth/demo-login` | Implemented (placeholder) |
-| `/products` | Coming Soon (501) |
-| `/categories` | Coming Soon (501) |
-| `/units` | Coming Soon (501) |
-| `/locations` | Coming Soon (501) |
-| `/suppliers` | Coming Soon (501) |
-| `/purchase-orders` | Coming Soon (501) |
-| `/receipts` | Coming Soon (501) |
-| `/stock/balances` | Coming Soon (501) |
-| `/stock/movements` | Coming Soon (501) |
-| `/stock/counts` | Coming Soon (501) |
-| `/stock/transfers` | Coming Soon (501) |
-| `/reports/inventory` | Coming Soon (501) |
-| `/ai/reorder-recommendations` | Demo stub |
-| `/ai/inventory-question` | Demo stub |
-| `/ai/stockout-radar` | Demo stub (differentiator) |
+| Group | Status |
+|-------|--------|
+| `/auth/demo-login` | Implemented (DB-backed demo JWT) |
+| `/me` | Implemented |
+| `/organizations/current`, `/organizations/{id}` | Implemented (tenant-scoped) |
+| `/products` … `/reports/inventory` | Coming Soon (501; auth required) |
+| `/ai/reorder-recommendations` | Demo stub (auth required) |
+| `/ai/inventory-question` | Demo stub (auth required) |
+| `/ai/stockout-radar` | Demo stub (differentiator; auth required) |
 
-Error shape (target): `{ "error": { "code", "message", "details" } }`.
+Error shape: `{ "error": { "code", "message", "details" } }`.
 
 ## Differentiator — Stockout Radar
 
-Transparent risk score from:
+Transparent risk score from stock on hand, average daily movement, supplier lead time, and safety stock. Show formula, inputs, reason, and assumptions. Avoid certainty claims. Scaffold endpoint: `POST /api/v1/ai/stockout-radar`.
 
-- stock on hand
-- average daily movement
-- supplier lead time
-- safety stock
+## Acceptance criteria
 
-Show formula, inputs, reason, and assumptions. Avoid certainty claims. AI may explain the signal; deterministic code owns the score. Scaffold endpoint: `POST /api/v1/ai/stockout-radar`.
+### Milestone 1 (met)
 
-## Acceptance criteria (full MVP — not met by scaffold)
+- [x] Backend starts; `/health` OK
+- [x] Alembic initial migration applies cleanly
+- [x] Seed: ≥30 products, 3 locations, 5 suppliers, 8 POs, movement history
+- [x] Demo login for Owner, Inventory Manager, Staff (+ second org user)
+- [x] Org scoping: wrong-org access denied (403)
+- [x] Smoke tests for health, auth, tenant basics
+- [x] `AIProvider` + `DemoAIProvider` + Ollama adapter stub retained
+- [x] README: setup, env, migrations, seed, credentials, limitations, M2–M4 backlog
+
+### Full MVP (later milestones)
 
 1. Create product on web and search it on mobile.
 2. Receive PO atomically updates balance and immutable ledger.
@@ -65,33 +62,31 @@ Show formula, inputs, reason, and assumptions. Avoid certainty claims. AI may ex
 7. Stockout Radar shows formula + assumptions; never claims certainty.
 8. Local setup works with Docker Postgres, demo login, Ollama optional / DemoAI fallback.
 
-## Scaffold acceptance (this milestone)
+## Backlog
 
-- [x] Backend starts; `/health` OK
-- [x] `/api/v1` package layout with Coming Soon business routes
-- [x] `AIProvider` + `DemoAIProvider` + Ollama adapter stub
-- [x] Alembic + seed placeholders
-- [x] Web demo login + Coming Soon pages for major routes
-- [x] Android Compose shell: demo login + home shortcuts stubs
-- [x] `docker-compose.yml` PostgreSQL only
-- [x] README, MVP_SPEC, `.env.example`
-
-## Backlog (unimplemented)
+### Milestone 2
 
 - Full CRUD for catalog, locations, suppliers
-- Immutable stock ledger and authoritative balances
+- Immutable stock ledger writes + authoritative balances on receive/adjust
 - Purchase orders + atomic receiving with discrepancy notes
 - Stock transfers (initiated / in-transit / received)
 - Stock count sessions, variance approval
-- Reports + CSV export
-- Settings (org, roles, units, reorder defaults)
-- Alembic initial migration + scaled fictional seed (30 products, 3 locations, 5 suppliers, 8 POs)
+- Role-gated mutations
+- Web/mobile product search vertical slice
+
+### Milestone 3
+
 - Real Ollama prompt wiring and schema validation
-- Tenant authorization enforcement on every endpoint
+- Reorder assistant + draft PO confirmation flow
+- Stockout Radar UI with formula/assumptions
+- Reports + CSV export (partial)
+
+### Milestone 4
+
 - ML Kit barcode scanning
 - Offline queue for count/receiving drafts + conflict UI
-- Unit/API/E2E tests beyond placeholders
-- Web dashboard live metrics
+- Settings (org, roles, units, reorder defaults)
+- Broader unit/API/E2E coverage and demo recording
 
 ## Non-goals (MVP)
 

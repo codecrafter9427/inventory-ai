@@ -1,5 +1,5 @@
-"""Placeholder test — expand when CRUD and ledger are implemented."""
+"""Kept for import compatibility; real coverage lives in test_health.py."""
 
 
-def test_placeholder() -> None:
+def test_placeholder_removed() -> None:
     assert True

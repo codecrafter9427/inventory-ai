@@ -1,4 +1,4 @@
-"""AI endpoint stubs — DemoAIProvider / optional Ollama stub."""
+"""AI endpoint stubs — DemoAIProvider / optional Ollama stub (auth required)."""
 
 from typing import Any
 
@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.ai.provider import AIProvider
-from app.dependencies import get_provider
+from app.dependencies import AuthContext, get_auth_context, get_provider
 from app.schemas.common import AIResultEnvelope
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -21,6 +21,7 @@ class AIRequest(BaseModel):
 @router.post("/reorder-recommendations", response_model=AIResultEnvelope)
 async def reorder_recommendations(
     body: AIRequest,
+    _auth: AuthContext = Depends(get_auth_context),
     provider: AIProvider = Depends(get_provider),
 ) -> dict[str, Any]:
     return await provider.reorder_recommendations(
@@ -33,6 +34,7 @@ async def reorder_recommendations(
 @router.post("/inventory-question", response_model=AIResultEnvelope)
 async def inventory_question(
     body: AIRequest,
+    _auth: AuthContext = Depends(get_auth_context),
     provider: AIProvider = Depends(get_provider),
 ) -> dict[str, Any]:
     return await provider.inventory_question(
@@ -45,6 +47,7 @@ async def inventory_question(
 @router.post("/stockout-radar", response_model=AIResultEnvelope)
 async def stockout_radar(
     body: AIRequest,
+    _auth: AuthContext = Depends(get_auth_context),
     provider: AIProvider = Depends(get_provider),
 ) -> dict[str, Any]:
     """Differentiator stub — transparent risk score via demo formula."""

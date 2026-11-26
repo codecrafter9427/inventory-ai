@@ -1,6 +1,7 @@
 """Shared API response shapes."""
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -35,10 +36,29 @@ class DemoLoginRequest(BaseModel):
 class DemoLoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    user_id: UUID
+    organization_id: UUID
     role: str
     display_name: str
+    email: str
     demo: bool = True
-    message: str = "Demo login placeholder — not production auth."
+    message: str = "Demo login — local JWT; not production auth."
+
+
+class MeResponse(BaseModel):
+    user_id: UUID
+    email: str
+    display_name: str
+    role: str
+    organization_id: UUID
+    organization_name: str
+    organization_slug: str
+
+
+class OrganizationResponse(BaseModel):
+    id: UUID
+    name: str
+    slug: str
 
 
 class AIResultEnvelope(BaseModel):

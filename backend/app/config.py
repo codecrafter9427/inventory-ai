@@ -6,9 +6,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=(".env", "../.env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
-    database_url: str = "postgresql+psycopg://inventory:inventory@localhost:5432/inventory_ai"
+    database_url: str = "postgresql+psycopg://inventory:inventory@localhost:5435/inventory_ai"
     jwt_secret: str = "change-me-demo-secret"
     demo_mode: bool = True
     demo_admin_email: str = "admin@demo.inventory.local"
