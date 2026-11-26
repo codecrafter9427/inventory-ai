@@ -15,7 +15,7 @@ settings = get_settings()
 
 app = FastAPI(
     title="Inventory AI",
-    description="Stock and warehouse operations MVP (portfolio) — Milestone 2 catalog + receive slice.",
+    description="Stock and warehouse operations MVP (portfolio) — Milestone 3 AI + Stockout Radar.",
     version=__version__,
 )
 

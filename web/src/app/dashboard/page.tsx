@@ -10,8 +10,8 @@ export default function DashboardPage() {
         <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">Overview</p>
         <h2 className="mt-2 text-3xl font-semibold">Dashboard</h2>
         <p className="mt-3 text-[var(--muted)] leading-relaxed">
-          Milestone 2 vertical slice is live: create/search products, receive purchase orders
-          (atomic balance + ledger), and inspect stock. KPI tiles remain Coming Soon.
+          Milestone 3 adds reorder recommendations, Stockout Radar, and inventory Q&amp;A (DemoAI
+          offline; Ollama optional). Catalog + receive from M2 remain available.
         </p>
         <ul className="mt-8 space-y-3 text-sm">
           <li className="rounded border border-[var(--border)] bg-[var(--surface)]/60 px-4 py-3">
@@ -32,11 +32,25 @@ export default function DashboardPage() {
             </Link>
             <span className="text-[var(--muted)]"> — balances + recent movements</span>
           </li>
-          {[
-            "Stock value metrics — Coming Soon",
-            "Low / out-of-stock alerts — Coming Soon",
-            "Stockout Radar — Coming Soon",
-          ].map((item) => (
+          <li className="rounded border border-[var(--border)] bg-[var(--surface)]/60 px-4 py-3">
+            <Link href="/reorder" className="text-[var(--accent)] hover:underline">
+              Reorder AI
+            </Link>
+            <span className="text-[var(--muted)]"> — recommendations + confirm draft PO</span>
+          </li>
+          <li className="rounded border border-[var(--border)] bg-[var(--surface)]/60 px-4 py-3">
+            <Link href="/stockout-radar" className="text-[var(--accent)] hover:underline">
+              Stockout Radar
+            </Link>
+            <span className="text-[var(--muted)]"> — transparent risk formula</span>
+          </li>
+          <li className="rounded border border-[var(--border)] bg-[var(--surface)]/60 px-4 py-3">
+            <Link href="/ai-ask" className="text-[var(--accent)] hover:underline">
+              AI Q&amp;A
+            </Link>
+            <span className="text-[var(--muted)]"> — allowlisted read tools</span>
+          </li>
+          {["Stock value metrics — Coming Soon", "Reports / CSV — Coming Soon"].map((item) => (
             <li
               key={item}
               className="rounded border border-[var(--border)] bg-[var(--surface)]/60 px-4 py-3 text-[var(--muted)]"

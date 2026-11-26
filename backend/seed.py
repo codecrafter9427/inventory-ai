@@ -474,6 +474,55 @@ def _seed_org(
                     )
                 )
 
+    # Extra outbound history + intentional low-stock rows for AI / Stockout Radar demos
+    for idx in (0, 4, 8, 12, 19, 24):
+        product = products[idx]
+        bal = db.execute(
+            select(StockBalance).where(
+                StockBalance.organization_id == org.id,
+                StockBalance.product_id == product.id,
+                StockBalance.location_id == locations[0].id,
+            )
+        ).scalar_one_or_none()
+        if bal is None:
+            continue
+        for day_offset in (2, 5, 9, 14, 21, 27):
+            qty = Decimal("1") + Decimal(idx % 3)
+            if bal.quantity < qty:
+                break
+            bal.quantity -= qty
+            db.add(
+                StockMovement(
+                    organization_id=org.id,
+                    product_id=product.id,
+                    location_id=locations[0].id,
+                    movement_type="dispatch",
+                    quantity=-qty,
+                    balance_after=bal.quantity,
+                    reason="Seed recurring dispatch for AI signals",
+                    actor_user_id=users["staff"].id,
+                    created_at=_utc(day_offset),
+                )
+            )
+        # Drive a few SKUs under reorder point for reorder + radar demos
+        if idx in (8, 19, 24) and bal.quantity > product.reorder_point:
+            shrink = bal.quantity - (product.reorder_point / Decimal("2"))
+            if shrink > 0:
+                bal.quantity -= shrink
+                db.add(
+                    StockMovement(
+                        organization_id=org.id,
+                        product_id=product.id,
+                        location_id=locations[0].id,
+                        movement_type="dispatch",
+                        quantity=-shrink,
+                        balance_after=bal.quantity,
+                        reason="Seed low-stock adjustment for demo radar",
+                        actor_user_id=users["staff"].id,
+                        created_at=_utc(3),
+                    )
+                )
+
     db.add(
         AuditEvent(
             organization_id=org.id,

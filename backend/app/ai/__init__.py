@@ -1,4 +1,4 @@
-"""AI provider factory — DemoAIProvider by default; optional Ollama stub."""
+"""AI provider factory — DemoAIProvider by default; optional Ollama adapter."""
 
 from app.ai.demo import DemoAIProvider
 from app.ai.ollama import OllamaAIProvider

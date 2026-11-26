@@ -6,7 +6,7 @@ Stock and warehouse operations for small retailers, distributors, and small ware
 
 Help owners and inventory staff track catalog, locations, purchasing, receiving, counts, transfers, and stock movements. Differentiator: **Stockout Radar** — a transparent risk score from on-hand stock, average daily movement, supplier lead time, and safety stock (formula shown; no certainty claims).
 
-**Milestone 2 (current):** products CRUD + search, purchase-order receiving (atomic `StockBalance` + immutable `StockMovement`), stock balances/movements on web, org-scoped auth on mutations, API tests. AI / barcode / offline / reports remain Coming Soon (M3–M4).
+**Milestone 3 (current):** AI provider + DemoAI offline fallback, reorder recommendations with draft-PO confirmation, allowlisted inventory Q&A, Stockout Radar UI, API tests. Mobile / barcode / offline remain M4.
 
 ## Tech stack
 
@@ -15,8 +15,8 @@ Help owners and inventory staff track catalog, locations, purchasing, receiving,
 | Web | Next.js + TypeScript |
 | Backend | FastAPI, Pydantic, SQLAlchemy, Alembic, REST JSON under `/api/v1` |
 | Database | PostgreSQL (UUID PKs, UTC timestamps, decimal money) via Docker Compose |
-| AI | `AIProvider` + deterministic `DemoAIProvider`; optional Ollama adapter stub |
-| Mobile | Kotlin + Jetpack Compose (native Android — not WebView); optional for M2 |
+| AI | `AIProvider` + deterministic `DemoAIProvider`; optional local Ollama adapter |
+| Mobile | Kotlin + Jetpack Compose (native Android — not WebView); optional for M3 |
 | Auth | Local demo login → JWT (organization + role claims) |
 
 ## Project layout
@@ -28,7 +28,7 @@ products/inventory-ai/
   .env.example
   docker-compose.yml      # PostgreSQL only (host port 5435)
   backend/                # FastAPI + models + Alembic + seed + tests
-  web/                    # Next.js — products / PO receive / stock
+  web/                    # Next.js — catalog / receive / AI / Stockout Radar
   mobile/                 # Android Compose shell (optional)
 ```
 
@@ -39,7 +39,8 @@ products/inventory-ai/
 - Docker (PostgreSQL)
 - Python 3.12+
 - Node.js 20+ (web)
-- Android Studio / JDK 17+ (mobile — optional for M2)
+- Android Studio / JDK 17+ (mobile — optional)
+- [Ollama](https://ollama.com) — **optional** (demo works without it)
 
 ### 1. Environment
 
@@ -74,10 +75,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Health: `GET http://localhost:8000/health`
 - OpenAPI: `http://localhost:8000/docs`
 - Demo login: `POST /api/v1/auth/demo-login`
-- Products: `GET/POST /api/v1/products` (search `?q=`)
-- Purchase orders: `GET /api/v1/purchase-orders`
-- Receive: `POST /api/v1/receipts`
-- Stock: `GET /api/v1/stock/balances`, `GET /api/v1/stock/movements`
+- AI: `POST /api/v1/ai/reorder-recommendations`, `/ai/inventory-question`, `/ai/stockout-radar`, `/ai/confirm-draft-po`
 
 ### 4. Tests
 
@@ -94,9 +92,9 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. Sign in with demo credentials, then use **Products**, **Purchase orders**, and **Stock**.
+Open `http://localhost:3000`. Sign in with demo credentials, then use **Products**, **Purchase orders**, **Stock**, **Reorder AI**, **Stockout Radar**, and **AI Q&A**.
 
-### 6. Mobile (Android) — optional for M2
+### 6. Mobile (Android) — optional for M3
 
 Open `mobile/` in Android Studio when ready. Shell only for now; device run can wait.
 
@@ -108,41 +106,68 @@ Password for all seeded users: `demo-password`
 |-------|------|
 | `admin@demo.inventory.local` | Owner / Admin |
 | `manager@demo.inventory.local` | Inventory Manager |
-| `staff@demo.inventory.local` | Staff (can receive; cannot create products) |
+| `staff@demo.inventory.local` | Staff (can receive; cannot create products or confirm AI draft POs) |
 | `other@demo.inventory.local` | Owner of a second org (tenant isolation demos) |
 
-Seed minimums (primary org `demo-retail`): **30 products**, **3 locations**, **5 suppliers**, **8 purchase orders**, opening/receive/dispatch **movement history**.
+Seed minimums (primary org `demo-retail`): **30 products**, **3 locations**, **5 suppliers**, **8 purchase orders**, opening/receive/dispatch **movement history** (including low-stock rows for AI demos).
 
-## Demo steps (Milestone 2 vertical slice)
+## Demo steps (Milestone 3 AI slice)
 
-1. Start Postgres, migrate, seed, and run the API (`uvicorn` on `:8000`).
+1. Start Postgres, migrate, seed, and run the API (`uvicorn` on `:8000`). Default `AI_PROVIDER=demo` — **no Ollama required**.
 2. Start the web app (`npm run dev` → `http://localhost:3000`).
 3. Sign in as `admin@demo.inventory.local` / `demo-password`.
-4. **Products** — click **New product**, enter SKU/name/barcode/unit/prices, save. Search by SKU, name, or barcode and confirm the new row appears.
-5. **Purchase orders** — open an order with status `ordered` or `partially received` (e.g. seeded `PO-2026-004`). Enter receive quantities (optionally add discrepancy notes) and click **Receive stock**.
-6. **Stock** — confirm the product balance increased at the PO location and a `receive` movement appears in recent movements.
-7. (Optional) Sign in as `other@demo.inventory.local` and confirm primary-org products/POs are not visible (tenant isolation).
+4. **Reorder AI** — review recommendations (stock, avg daily movement, lead time, reorder point + assumptions). Select lines → **Confirm draft PO** → verify a `draft` PO appears under Purchase orders. Stock balances are unchanged.
+5. **Stockout Radar** — open the differentiator page; confirm formula, inputs, reasons, and assumptions. Scores are risk signals, not predictions.
+6. **AI Q&A** — ask e.g. “Which products are low stock?” or “Stockout risk for SKU-009”. Answers are labeled AI content from allowlisted read tools only.
+7. (Optional) Sign in as `staff@demo.inventory.local` and confirm draft-PO confirmation is role-denied.
 
-## AI (Ollama + demo fallback)
+## AI (Ollama optional + demo fallback)
 
-- Default: `AI_PROVIDER=demo` — deterministic JSON; works offline.
-- Optional: `AI_PROVIDER=ollama` + local [Ollama](https://ollama.com) model; adapter is still a stub until Milestone 3.
+### Demo without Ollama (default)
+
+```bash
+# in .env / backend/.env
+AI_PROVIDER=demo
+```
+
+`DemoAIProvider` returns deterministic explanations over the same computed signals and allowlisted tools. Works fully offline.
+
+### Optional local Ollama
+
+1. Install [Ollama](https://ollama.com) and pull a local open model, e.g. `ollama pull llama3.2`.
+2. Ensure Ollama is listening (default `http://localhost:11434`).
+3. Set:
+
+```bash
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2
+```
+
+4. Restart the API. If Ollama is down or returns invalid JSON, the adapter **falls back** to `DemoAIProvider`.
+
+Rules:
+
+- Backend-only model calls; typed schemas; validated envelopes.
+- Q&A uses allowlisted read tools with org auth before execution.
 - AI never changes stock or owns authoritative balances.
+- Draft PO is created only after explicit `confirm=true` (owner / inventory_manager).
+- Label AI content in the UI; no certainty claims on Stockout Radar.
 
 ## Milestone backlog
 
 1. **Done (M1)** — env, Docker Postgres, models, migrations, demo login + roles, org scoping, seed, health, smoke tests.
 2. **Done (M2)** — products CRUD/search; PO receive → atomic balance + immutable ledger; stock balances/movements; role-gated mutations; web vertical slice; API tests.
-3. **M3** — Ollama wiring, reorder assistant, draft PO confirmation, Stockout Radar UI with formula/assumptions, reports + CSV (partial).
-4. **M4** — offline queue, ML Kit barcode, settings polish, broader E2E/demo recording.
+3. **Done (M3)** — DemoAI + optional Ollama; reorder assistant + draft PO confirmation; inventory Q&A; Stockout Radar API + UI; AI auth/formula tests.
+4. **M4** — offline queue, ML Kit barcode, settings polish, reports/CSV, broader E2E/demo recording, mobile product search.
 
-## Known limitations (M2)
+## Known limitations (M3)
 
 - Transfers, stock counts, supplier/location write APIs, and reports remain **Coming Soon** (501 stubs).
-- PO create/edit is not wired; receiving uses seeded receivable POs (or API-created test POs).
-- Mobile product search / barcode path deferred; web covers the primary slice.
+- General PO create/edit UI is not wired; AI confirm creates `draft` POs; receiving uses receivable seeded/API POs.
+- Mobile product search / barcode path deferred.
 - Auth is demo JWT only (local secret; not production SSO).
-- Ollama not fully prompt-wired beyond availability ping + demo fallback.
+- Ollama quality depends on the local model; invalid output falls back to DemoAI.
 - Prototype security: env placeholders, limited rate limiting, no production hardening.
 
 See `MVP_SPEC.md` for entities, API groups, and acceptance criteria.
