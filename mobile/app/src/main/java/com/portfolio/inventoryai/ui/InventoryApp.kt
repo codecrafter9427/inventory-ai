@@ -6,14 +6,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.portfolio.inventoryai.data.ApiClient
+import com.portfolio.inventoryai.ui.screens.BarcodeScanScreen
 import com.portfolio.inventoryai.ui.screens.ComingSoonScreen
 import com.portfolio.inventoryai.ui.screens.HomeScreen
 import com.portfolio.inventoryai.ui.screens.LoginScreen
 import com.portfolio.inventoryai.ui.screens.ProductSearchScreen
+import com.portfolio.inventoryai.ui.screens.ReceiveScreen
 
 @Composable
 fun InventoryApp() {
@@ -21,6 +25,7 @@ fun InventoryApp() {
     val api = remember { ApiClient() }
     var loggedIn by rememberSaveable { mutableStateOf(false) }
     var displayName by rememberSaveable { mutableStateOf("Demo User") }
+    var receiveProductLabel by rememberSaveable { mutableStateOf<String?>(null) }
 
     NavHost(
         navController = navController,
@@ -58,17 +63,43 @@ fun InventoryApp() {
             )
         }
         composable("scan") {
-            ComingSoonScreen(
-                title = "Barcode scan",
-                detail = "ML Kit barcode scanning with manual search fallback. Coming Soon.",
+            BarcodeScanScreen(
+                api = api,
                 onBack = { navController.popBackStack() },
+                onProductReady = { productId, label ->
+                    receiveProductLabel = label
+                    navController.navigate("receive_product/$productId") {
+                        popUpTo("scan") { inclusive = true }
+                    }
+                },
+                onManualReceive = {
+                    receiveProductLabel = null
+                    navController.navigate("receive") {
+                        popUpTo("scan") { inclusive = true }
+                    }
+                },
             )
         }
         composable("receive") {
-            ComingSoonScreen(
-                title = "Receive against PO",
-                detail = "Use the web Purchase orders screen for receiving in this milestone.",
+            ReceiveScreen(
+                api = api,
                 onBack = { navController.popBackStack() },
+                onOpenScan = { navController.navigate("scan") },
+            )
+        }
+        composable(
+            route = "receive_product/{productId}",
+            arguments = listOf(
+                navArgument("productId") { type = NavType.StringType },
+            ),
+        ) { entry ->
+            val productId = entry.arguments?.getString("productId")
+            ReceiveScreen(
+                api = api,
+                productIdFilter = productId,
+                productLabel = receiveProductLabel,
+                onBack = { navController.popBackStack() },
+                onOpenScan = { navController.navigate("scan") },
             )
         }
         composable("count") {

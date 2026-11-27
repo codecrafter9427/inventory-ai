@@ -98,20 +98,29 @@ Endpoint: `POST /api/v1/ai/stockout-radar`.
 - [x] README complete + DEMO.md recording script
 - [x] Mobile: demo login + product search calling same APIs (code); Android Studio sync documented
 
+### Milestone 5 (met — mobile code; Studio sync to run)
+
+- [x] Native Android CameraX + free ML Kit barcode scanning (`CAMERA` permission)
+- [x] Manual barcode/SKU fallback when camera denied or unavailable
+- [x] Scan → product resolve via `GET /products?q=` (exact barcode preferred client-side)
+- [x] Mobile PO receive: receivable PO/line → confirm qty + PO location → `POST /receipts`
+- [x] Post-receive UI shows balance after + recent movements
+- [x] Home shortcuts: Scan + Receive enabled; count/transfer/adjust remain Coming Soon
+- [x] Docs: README / DEMO / MVP_SPEC / mobile README updated; backend receive pytest regression
+
 ### Full MVP (later)
 
 1. Create product on web and search it on mobile. *(web + mobile search code in M4)*
 2. Receive PO atomically updates balance and immutable ledger. *(done)*
-3. Barcode scan opens the correct product (ML Kit; manual search fallback).
+3. Barcode scan opens the correct product (ML Kit; manual search fallback). *(done in M5 mobile code)*
 4. Count variance requires approval and reason. *(thin web/API slice in M4)*
 5. Transfer preserves total quantity across locations. *(thin slice in M4)*
 6. AI uses seeded records and only creates a draft PO after user confirmation. *(done)*
 7. Stockout Radar shows formula + assumptions; never claims certainty. *(done)*
 8. Local setup works with Docker Postgres, demo login, Ollama optional / DemoAI fallback. *(done)*
 
-## Backlog (post-M4)
+## Backlog (post-M5)
 
-- ML Kit barcode scanning
 - Offline queue for count/receiving drafts + conflict UI
 - Settings (org, roles, units, reorder defaults)
 - Suppliers / locations write APIs

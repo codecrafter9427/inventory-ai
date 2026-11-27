@@ -6,7 +6,7 @@ Stock and warehouse operations for small retailers, distributors, and small ware
 
 Help owners and inventory staff track catalog, locations, purchasing, receiving, counts, transfers, and stock movements. Differentiator: **Stockout Radar** — a transparent risk score from on-hand stock, average daily movement, supplier lead time, and safety stock (formula shown; no certainty claims).
 
-**Milestone 4 (current):** polish (loading/error/empty/confirmations), dashboard KPI tiles, inventory reports + CSV export, thin transfers + count-approval slice, expanded tests, DEMO.md, mobile product search (code; Android Studio sync required to run).
+**Milestone 5 (current):** native Android ML Kit barcode scan + mobile PO receive (same `POST /receipts` as web); camera deny → manual barcode/SKU; post-receive balance + movement. Offline queue remains later.
 
 ## Architecture
 
@@ -41,7 +41,7 @@ products/inventory-ai/
   mobile/                 # Android Compose (Studio sync to run)
 ```
 
-## Features (M4)
+## Features (M5)
 
 | Area | Status |
 |------|--------|
@@ -57,8 +57,10 @@ products/inventory-ai/
 | Stockout Radar | Done |
 | Inventory Q&A (allowlisted tools) | Done |
 | Mobile login + product search + stock by SKU | Code done; device needs Studio |
+| Mobile ML Kit barcode scan (+ manual fallback) | Code done (M5); Studio sync to run |
+| Mobile PO receive → balance + movement | Code done (M5); Studio sync to run |
 | Suppliers / locations write / settings | Coming Soon |
-| ML Kit barcode / offline queue | Coming Soon |
+| Offline queue (count/receive drafts) | Coming Soon (post-M5) |
 
 ## Setup
 
@@ -190,14 +192,16 @@ Rules: backend-only model calls; typed schemas; Q&A allowlisted read tools; AI n
 2. **Done (M2)** — products CRUD; PO receive → balance + ledger; stock reads; role gates; web slice.
 3. **Done (M3)** — DemoAI + Ollama; reorder + draft PO; Q&A; Stockout Radar; AI tests.
 4. **Done (M4)** — polish, KPIs, reports/CSV, thin transfers/counts, tests, DEMO.md, mobile search code.
-5. **Later** — ML Kit barcode, offline queue, settings, suppliers write, full mobile ops, E2E recording.
+5. **Done (M5)** — Android ML Kit barcode + mobile PO receive (reuse `/receipts`); docs + receive pytest regression.
+6. **Later** — offline queue, settings, suppliers write, full mobile count/transfer/adjust, E2E recording.
 
 ## Known limitations
 
 - Suppliers / locations **write** APIs and Settings remain Coming Soon.
 - Transfer/count UIs are thin slices (not full multi-line offline workflows).
 - General PO create/edit UI not wired (AI draft + seeded receivable POs).
-- Mobile: barcode, receive, offline queue deferred; **Android Studio sync required** to run.
+- Mobile barcode/receive are **code-complete**; **Android Studio Gradle sync** still required to compile/run on emulator/device.
+- Offline draft queue for counts/receiving is not in M5.
 - Auth is demo JWT only; Ollama quality depends on local model.
 
 See `MVP_SPEC.md` for entities, API groups, and acceptance criteria.

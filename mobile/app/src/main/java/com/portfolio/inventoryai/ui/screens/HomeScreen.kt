@@ -22,8 +22,8 @@ private data class Shortcut(val route: String, val label: String, val enabled: B
 
 private val shortcuts = listOf(
     Shortcut("products", "Product search", enabled = true),
-    Shortcut("scan", "Scan barcode", enabled = false),
-    Shortcut("receive", "Receive PO", enabled = false),
+    Shortcut("scan", "Scan barcode", enabled = true),
+    Shortcut("receive", "Receive PO", enabled = true),
     Shortcut("count", "Stock count", enabled = false),
     Shortcut("transfer", "Transfer", enabled = false),
     Shortcut("adjust", "Quick adjustment", enabled = false),
@@ -51,7 +51,7 @@ fun HomeScreen(
             modifier = Modifier.padding(top = 4.dp),
         )
         Text(
-            text = "Product search calls the same backend as web. Other workflows stay Coming Soon (disabled).",
+            text = "Search, barcode scan, and PO receive call the same backend as web. Count/transfer/adjust stay Coming Soon.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
