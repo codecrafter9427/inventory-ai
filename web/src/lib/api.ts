@@ -86,7 +86,9 @@ export type PurchaseOrderSummary = {
   id: string;
   po_number: string;
   status: string;
+  supplier_id: string;
   supplier_name: string | null;
+  location_id: string;
   location_name: string | null;
   ordered_at: string | null;
   line_count: number;
@@ -107,11 +109,22 @@ export type PurchaseOrderDetail = {
   id: string;
   po_number: string;
   status: string;
+  supplier_id: string;
   supplier_name: string | null;
   location_id: string;
   location_name: string | null;
   notes: string | null;
   lines: PurchaseOrderLine[];
+};
+
+export type Supplier = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  lead_time_days: number;
+  notes: string | null;
+  is_active: boolean;
 };
 
 export type StockBalance = {

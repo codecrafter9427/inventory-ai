@@ -32,12 +32,6 @@ async def categories_item(
     return _soon("categories")
 
 
-@router.post("/units")
-async def units_create(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
-    return _soon("units")
-
-
-@router.get("/units/{item_id}")
 @router.patch("/units/{item_id}")
 @router.delete("/units/{item_id}")
 async def units_item(
@@ -45,53 +39,6 @@ async def units_item(
     _auth: AuthContext = Depends(get_auth_context),
 ) -> JSONResponse:
     return _soon("units")
-
-
-@router.post("/locations")
-async def locations_create(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
-    return _soon("locations")
-
-
-@router.get("/locations/{item_id}")
-@router.patch("/locations/{item_id}")
-@router.delete("/locations/{item_id}")
-async def locations_item(
-    item_id: str,
-    _auth: AuthContext = Depends(get_auth_context),
-) -> JSONResponse:
-    return _soon("locations")
-
-
-@router.get("/suppliers")
-@router.post("/suppliers")
-async def suppliers_collection(_auth: AuthContext = Depends(get_auth_context)) -> JSONResponse:
-    return _soon("suppliers")
-
-
-@router.get("/suppliers/{item_id}")
-@router.patch("/suppliers/{item_id}")
-@router.delete("/suppliers/{item_id}")
-async def suppliers_item(
-    item_id: str,
-    _auth: AuthContext = Depends(get_auth_context),
-) -> JSONResponse:
-    return _soon("suppliers")
-
-
-@router.post("/purchase-orders")
-async def purchase_orders_create(
-    _auth: AuthContext = Depends(get_auth_context),
-) -> JSONResponse:
-    return _soon("purchase-orders-write")
-
-
-@router.patch("/purchase-orders/{item_id}")
-@router.delete("/purchase-orders/{item_id}")
-async def purchase_orders_mutate(
-    item_id: str,
-    _auth: AuthContext = Depends(get_auth_context),
-) -> JSONResponse:
-    return _soon("purchase-orders-write")
 
 
 @router.get("/receipts")

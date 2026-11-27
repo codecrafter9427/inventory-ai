@@ -9,6 +9,17 @@ from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.main import app
 from app.models import Organization
+from app.services.rate_limit import login_rate_limiter
+
+
+@pytest.fixture(autouse=True)
+def _reset_login_rate_limiter() -> None:
+    """Keep demo-login rate limit from leaking across tests."""
+    login_rate_limiter.reset()
+    login_rate_limiter.max_calls = 10
+    yield
+    login_rate_limiter.reset()
+    login_rate_limiter.max_calls = 10
 
 
 @pytest.fixture(scope="session")

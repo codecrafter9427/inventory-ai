@@ -15,9 +15,9 @@ const NAV = [
   { href: "/reorder", label: "Reorder AI", enabled: true },
   { href: "/stockout-radar", label: "Stockout Radar", enabled: true },
   { href: "/ai-ask", label: "AI Q&A", enabled: true },
-  { href: "/suppliers", label: "Suppliers", enabled: false },
-  { href: "/locations", label: "Locations", enabled: false },
-  { href: "/settings", label: "Settings", enabled: false },
+  { href: "/suppliers", label: "Suppliers", enabled: true },
+  { href: "/locations", label: "Locations", enabled: true },
+  { href: "/settings", label: "Settings", enabled: true },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {

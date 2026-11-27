@@ -13,6 +13,7 @@ from app.dependencies import AuthContext
 from app.errors import http_error
 from app.models import PurchaseOrder, PurchaseOrderLine, StockBalance, StockMovement
 from app.schemas.purchase_order import ReceiveLineResult, ReceiveRequest, ReceiveResponse
+from app.services.audit import record_audit
 
 RECEIVABLE_STATUSES = frozenset({"ordered", "partially_received"})
 
@@ -144,6 +145,27 @@ def receive_purchase_order(
             existing = (po.notes or "").strip()
             po.notes = f"{existing}\nDiscrepancy: {note}".strip() if existing else f"Discrepancy: {note}"
 
+    record_audit(
+        db,
+        organization_id=auth.organization_id,
+        actor_user_id=auth.user_id,
+        action="purchase_order.receive",
+        entity_type="purchase_order",
+        entity_id=po.id,
+        message=f"Received against {po.po_number}",
+        details={
+            "po_number": po.po_number,
+            "status": po.status,
+            "line_count": len(results),
+            "quantities": [
+                {
+                    "purchase_order_line_id": str(r.purchase_order_line_id),
+                    "quantity": str(r.quantity_received_this_time),
+                }
+                for r in results
+            ],
+        },
+    )
     db.flush()
 
     return ReceiveResponse(

@@ -6,7 +6,7 @@ Stock and warehouse operations for small retailers, distributors, and small ware
 
 Help owners and inventory staff track catalog, locations, purchasing, receiving, counts, transfers, and stock movements. Differentiator: **Stockout Radar** — a transparent risk score from on-hand stock, average daily movement, supplier lead time, and safety stock (formula shown; no certainty claims).
 
-**Milestone 5 (current):** native Android ML Kit barcode scan + mobile PO receive (same `POST /receipts` as web); camera deny → manual barcode/SKU; post-receive balance + movement. Offline queue remains later.
+**Milestone 6 (current, `0.6.0-m6`):** suppliers/locations write + Settings (org/roles/units/reorder defaults); PO create/edit/submit/cancel; ledger integrity helper; Insights connector; smallest safe hardening (login rate limit, audit on key writes, CI, backup notes).
 
 ## Architecture
 
@@ -15,7 +15,8 @@ Browser (Next.js)  ─┐
                     ├─► FastAPI /api/v1 ─► PostgreSQL (Docker :5435)
 Android Compose   ─┘         │
                              ├─ DemoAIProvider (default) / optional Ollama
-                             └─ Deterministic stock math (balances, reports, radar formula)
+                             ├─ Deterministic stock math (balances, reports, radar)
+                             └─ Insights connector (service token, read-only)
 ```
 
 | Layer | Stack |
@@ -30,37 +31,36 @@ Android Compose   ─┘         │
 ### Project layout
 
 ```
-products/inventory-ai/
+inventory-ai/
   README.md
   DEMO.md                 # Scripted demo / recording checklist
   MVP_SPEC.md
-  .env.example
+  CONNECTORS.md           # Insights connector (Agent 5)
+  BACKUP.md               # Local Postgres dump/restore
+  .env.example            # Demo vs prod-like placeholders
   docker-compose.yml      # PostgreSQL only (host port 5435)
+  .github/workflows/ci.yml
   backend/                # FastAPI + models + Alembic + seed + tests
   web/                    # Next.js UI
   mobile/                 # Android Compose (Studio sync to run)
 ```
 
-## Features (M5)
+## Features (M6)
 
 | Area | Status |
 |------|--------|
 | Demo login + org/role JWT | Done |
 | Products CRUD / search | Done |
-| PO list + atomic receive | Done |
-| Stock balances + movements | Done |
-| Dashboard KPI tiles | Done |
-| Reports + CSV (stock-on-hand, movements) | Done |
-| Transfers (create → receive; qty preserved) | Thin slice |
-| Stock counts (submit → approve w/ variance reason) | Thin slice |
-| Reorder AI + confirm draft PO | Done |
-| Stockout Radar | Done |
-| Inventory Q&A (allowlisted tools) | Done |
-| Mobile login + product search + stock by SKU | Code done; device needs Studio |
-| Mobile ML Kit barcode scan (+ manual fallback) | Code done (M5); Studio sync to run |
-| Mobile PO receive → balance + movement | Code done (M5); Studio sync to run |
-| Suppliers / locations write / settings | Coming Soon |
-| Offline queue (count/receive drafts) | Coming Soon (post-M5) |
+| Suppliers + locations write APIs + web UI | Done (M6) |
+| Settings (org, roles read, units, reorder defaults) | Done (M6) |
+| PO create / edit / submit / cancel + receive | Done (M6) |
+| Stock balances + movements + ledger integrity helper | Done |
+| Dashboard KPI tiles + reports/CSV | Done |
+| Transfers / counts (thin slices) | Thin slice |
+| Reorder AI + Stockout Radar + Q&A | Done |
+| Insights connector health + summary | Done (M6) |
+| Mobile barcode scan + PO receive | Code done (M5); Studio sync to run |
+| Offline queue (count/receive drafts) | Coming Soon |
 
 ## Setup
 
@@ -81,13 +81,15 @@ cp .env.example backend/.env
 cp web/.env.example web/.env.local
 ```
 
-Default DB URL uses host port **5435**.
+Default DB URL uses host port **5435**. See `.env.example` for **demo** vs **prod-like** placeholders (`JWT_ACCESS_TOKEN_HOURS`, `INSIGHTS_CONNECTOR_TOKEN`, rate limits).
 
 ### 2. Database
 
 ```bash
 docker compose up -d
 ```
+
+Postgres healthcheck is already configured. Backup notes: **[BACKUP.md](./BACKUP.md)**.
 
 ### 3. Backend — migrations, seed, run
 
@@ -104,13 +106,13 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 - Health: `GET http://localhost:8000/health`
 - OpenAPI: `http://localhost:8000/docs`
+- Version: `0.6.0-m6`
 
 ### 4. Tests / quality
 
 ```bash
 cd backend
 pytest tests -q
-# Optional format check if ruff/black installed locally — pytest is the gate
 ```
 
 ```bash
@@ -119,6 +121,8 @@ npm install
 npm run lint
 npx tsc --noEmit
 ```
+
+CI: `.github/workflows/ci.yml` (migrate + seed + pytest against Postgres service).
 
 ### 5. Web
 
@@ -132,7 +136,7 @@ Open `http://localhost:3000`.
 
 ### 6. Mobile (Android)
 
-See `mobile/README.md`. Open `mobile/` in **Android Studio**, sync Gradle, run on emulator (`10.0.2.2:8000`). Device run without Studio sync is a known limitation.
+See `mobile/README.md`. Open `mobile/` in **Android Studio**, sync Gradle, run on emulator (`10.0.2.2:8000`).
 
 ## Demo credentials
 
@@ -145,7 +149,7 @@ Password for all seeded users: `demo-password`
 | `staff@demo.inventory.local` | Staff (receive/transfers/counts; no catalog create / no AI draft PO / no count approve) |
 | `other@demo.inventory.local` | Owner of a second org (tenant isolation) |
 
-Seed minimums (primary org `demo-retail`): **30 products**, **3 locations**, **5 suppliers**, **8 purchase orders**, movement history (including low-stock rows for AI demos).
+Seed minimums (primary org `demo-retail`): **30 products**, **3 locations**, **5 suppliers**, **8 purchase orders**, movement history.
 
 ## Demo steps
 
@@ -153,55 +157,50 @@ Full recording checklist: **[DEMO.md](./DEMO.md)**.
 
 1. Start Postgres, migrate, seed, API (`:8000`). `AI_PROVIDER=demo`.
 2. Start web (`npm run dev`).
-3. Sign in as admin → **Dashboard** KPI tiles.
-4. **Products** → search/create; **Purchase orders** → confirm receive.
-5. **Stock** → balances + ledger; **Transfers** → create + receive; **Counts** → approve variance with reason.
-6. **Reports** → CSV stock-on-hand / movements.
-7. **Reorder AI** → confirm draft PO (stock unchanged); **Stockout Radar**; **AI Q&A**.
+3. Sign in as admin → **Dashboard**.
+4. **Settings** → org reorder defaults / units; **Suppliers** / **Locations** create.
+5. **Purchase orders** → new draft → submit → receive (or cancel before receive).
+6. **Stock** / **Reports** / AI flows as before.
+7. Optional: Insights connector — see **[CONNECTORS.md](./CONNECTORS.md)**.
+
+## Insights connector
+
+Read-only Agent 5 surface:
+
+- `GET /api/v1/connectors/insights/v1/health`
+- `GET /api/v1/connectors/insights/v1/summary`
+
+Auth: `Authorization: Bearer $INSIGHTS_CONNECTOR_TOKEN` + `X-Organization-Id`. Details in **CONNECTORS.md**.
 
 ## AI (demo + optional Ollama)
-
-### Demo without Ollama (default)
 
 ```bash
 AI_PROVIDER=demo
 ```
 
-`DemoAIProvider` returns deterministic explanations over computed signals and allowlisted tools.
-
-### Optional local Ollama
-
-1. Install Ollama; `ollama pull llama3.2`
-2. Set `AI_PROVIDER=ollama`, `OLLAMA_BASE_URL=http://localhost:11434`, `OLLAMA_MODEL=llama3.2`
-3. Restart API — invalid/down Ollama **falls back** to DemoAI
-
-Rules: backend-only model calls; typed schemas; Q&A allowlisted read tools; AI never changes stock; draft PO only after `confirm=true`; Stockout Radar shows formula (no certainty claims).
+Optional Ollama: set `AI_PROVIDER=ollama` and local `OLLAMA_*` vars — falls back to DemoAI on failure. Rules unchanged: no stock mutation by AI; draft PO only after `confirm=true`.
 
 ## Prototype security notes
 
-- Demo JWT with env `JWT_SECRET` placeholder — not production SSO.
-- Env vars / `.env.example` only; never commit real secrets.
-- Org scoping enforced server-side; role gates on mutations.
-- AI tools org-authorized before execution; limited prototype rate limiting.
-- Cleartext HTTP allowed on Android emulator for local demo only.
+- Demo JWT (`JWT_SECRET`); TTL via `JWT_ACCESS_TOKEN_HOURS` (default 24h) — not production SSO.
+- Password policy **notes**: `PASSWORD_MIN_LENGTH` (default 10) documented for future non-demo auth; seeded demo passwords may be shorter.
+- Login rate limit: `LOGIN_RATE_LIMIT_PER_MINUTE` (default 10) on `/auth/demo-login`.
+- Org scoping + role gates on mutations; audit events on supplier/location writes, PO submit/receive.
+- Insights connector uses a shared service token (empty = disabled).
 - Not hardened for internet exposure, multi-tenant SaaS, or compliance audits.
 
 ## Milestone backlog
 
-1. **Done (M1)** — env, Docker Postgres, models, migrations, demo login, seed, smoke tests.
-2. **Done (M2)** — products CRUD; PO receive → balance + ledger; stock reads; role gates; web slice.
-3. **Done (M3)** — DemoAI + Ollama; reorder + draft PO; Q&A; Stockout Radar; AI tests.
-4. **Done (M4)** — polish, KPIs, reports/CSV, thin transfers/counts, tests, DEMO.md, mobile search code.
-5. **Done (M5)** — Android ML Kit barcode + mobile PO receive (reuse `/receipts`); docs + receive pytest regression.
-6. **Later** — offline queue, settings, suppliers write, full mobile count/transfer/adjust, E2E recording.
+1. **Done (M1–M5)** — foundation through mobile barcode receive.
+2. **Done (M6)** — suppliers/locations/settings, PO write lifecycle, ledger helper, connector, hardening docs/CI.
+3. **Later** — offline queue, full mobile count/transfer/adjust, E2E recording, production auth.
 
 ## Known limitations
 
-- Suppliers / locations **write** APIs and Settings remain Coming Soon.
-- Transfer/count UIs are thin slices (not full multi-line offline workflows).
-- General PO create/edit UI not wired (AI draft + seeded receivable POs).
-- Mobile barcode/receive are **code-complete**; **Android Studio Gradle sync** still required to compile/run on emulator/device.
-- Offline draft queue for counts/receiving is not in M5.
-- Auth is demo JWT only; Ollama quality depends on local model.
+- Transfer/count UIs remain thin slices (not full multi-line offline workflows).
+- Mobile still needs **Android Studio Gradle sync** to run.
+- Offline draft queue for counts/receiving is not implemented.
+- Auth is demo JWT only; connector token is a shared secret (not per-client OAuth).
+- In-memory login rate limit is single-process only.
 
 See `MVP_SPEC.md` for entities, API groups, and acceptance criteria.

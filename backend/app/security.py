@@ -14,6 +14,7 @@ from jose import JWTError, jwt
 from app.config import Settings
 
 ALGORITHM = "HS256"
+# Default when callers omit expires_hours; prefer Settings.jwt_access_token_hours.
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 _PBKDF2_ITERATIONS = 120_000
 
@@ -54,8 +55,9 @@ def create_access_token(
     role_code: str,
     email: str,
     settings: Settings,
-    expires_hours: int = ACCESS_TOKEN_EXPIRE_HOURS,
+    expires_hours: int | None = None,
 ) -> str:
+    hours = expires_hours if expires_hours is not None else settings.jwt_access_token_hours
     now = datetime.now(timezone.utc)
     payload: dict[str, Any] = {
         "sub": str(user_id),
@@ -63,7 +65,7 @@ def create_access_token(
         "role": role_code,
         "email": email,
         "iat": int(now.timestamp()),
-        "exp": int((now + timedelta(hours=expires_hours)).timestamp()),
+        "exp": int((now + timedelta(hours=hours)).timestamp()),
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm=ALGORITHM)
 

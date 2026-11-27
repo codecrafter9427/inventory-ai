@@ -1,0 +1,46 @@
+name: inventory-ai-ci
+
+on:
+  push:
+  pull_request:
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  backend-pytest:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: inventory
+          POSTGRES_PASSWORD: inventory
+          POSTGRES_DB: inventory_ai
+        ports:
+          - 5435:5432
+        options: >-
+          --health-cmd "pg_isready -U inventory -d inventory_ai"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://inventory:inventory@localhost:5435/inventory_ai
+      JWT_SECRET: ci-demo-secret
+      DEMO_MODE: "true"
+      AI_PROVIDER: demo
+      INSIGHTS_CONNECTOR_TOKEN: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Migrate + seed
+        run: |
+          alembic upgrade head
+          python seed.py
+      - name: Pytest
+        run: pytest tests -q

@@ -9,6 +9,28 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class PurchaseOrderLineCreate(BaseModel):
+    product_id: UUID
+    quantity_ordered: Decimal = Field(..., gt=0, decimal_places=4)
+    unit_cost: Decimal | None = Field(default=None, ge=0, decimal_places=4)
+
+
+class PurchaseOrderCreate(BaseModel):
+    supplier_id: UUID
+    location_id: UUID
+    notes: str | None = None
+    expected_at: datetime | None = None
+    lines: list[PurchaseOrderLineCreate] = Field(..., min_length=1)
+
+
+class PurchaseOrderUpdate(BaseModel):
+    supplier_id: UUID | None = None
+    location_id: UUID | None = None
+    notes: str | None = None
+    expected_at: datetime | None = None
+    lines: list[PurchaseOrderLineCreate] | None = None
+
+
 class PurchaseOrderLineResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

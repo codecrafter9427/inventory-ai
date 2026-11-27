@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,6 +24,18 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Org-level defaults applied when creating products (optional override per SKU)
+    default_reorder_point: Mapped[Decimal] = mapped_column(
+        Numeric(14, 4),
+        nullable=False,
+        default=Decimal("0"),
+    )
+    default_safety_stock: Mapped[Decimal] = mapped_column(
+        Numeric(14, 4),
+        nullable=False,
+        default=Decimal("0"),
+    )
+    default_lead_time_days: Mapped[int] = mapped_column(Integer, nullable=False, default=7)
 
     users: Mapped[list[User]] = relationship(back_populates="organization")
     roles: Mapped[list[Role]] = relationship(back_populates="organization")

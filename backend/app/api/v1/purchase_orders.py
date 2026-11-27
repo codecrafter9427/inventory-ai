@@ -1,4 +1,4 @@
-"""Purchase order read API (receiving via /receipts)."""
+"""Purchase order read + create/edit/submit/cancel (receiving via /receipts)."""
 
 from __future__ import annotations
 
@@ -12,12 +12,16 @@ from app.db.session import get_db
 from app.dependencies import AuthContext, get_auth_context
 from app.errors import http_error
 from app.models import PurchaseOrder, PurchaseOrderLine
+from app.permissions import CATALOG_ROLES, require_roles
 from app.schemas.pagination import Page
 from app.schemas.purchase_order import (
+    PurchaseOrderCreate,
     PurchaseOrderLineResponse,
     PurchaseOrderResponse,
     PurchaseOrderSummary,
+    PurchaseOrderUpdate,
 )
+from app.services import purchase_orders as po_service
 
 router = APIRouter(prefix="/purchase-orders", tags=["purchase-orders"])
 
@@ -100,6 +104,18 @@ async def list_purchase_orders(
     return Page(items=items, total=total, page=page, page_size=page_size)
 
 
+@router.post("", response_model=PurchaseOrderResponse, status_code=status.HTTP_201_CREATED)
+async def create_purchase_order(
+    body: PurchaseOrderCreate,
+    auth: AuthContext = Depends(get_auth_context),
+    db: Session = Depends(get_db),
+) -> PurchaseOrderResponse:
+    require_roles(auth, CATALOG_ROLES, action="create purchase orders")
+    po = po_service.create_purchase_order(db, auth, body)
+    db.commit()
+    return _detail(po)
+
+
 @router.get("/{purchase_order_id}", response_model=PurchaseOrderResponse)
 async def get_purchase_order(
     purchase_order_id: uuid.UUID,
@@ -121,4 +137,41 @@ async def get_purchase_order(
     )
     if po is None:
         raise http_error(status.HTTP_404_NOT_FOUND, "not_found", "Purchase order not found")
+    return _detail(po)
+
+
+@router.patch("/{purchase_order_id}", response_model=PurchaseOrderResponse)
+async def update_purchase_order(
+    purchase_order_id: uuid.UUID,
+    body: PurchaseOrderUpdate,
+    auth: AuthContext = Depends(get_auth_context),
+    db: Session = Depends(get_db),
+) -> PurchaseOrderResponse:
+    require_roles(auth, CATALOG_ROLES, action="edit purchase orders")
+    po = po_service.update_purchase_order(db, auth, purchase_order_id, body)
+    db.commit()
+    return _detail(po)
+
+
+@router.post("/{purchase_order_id}/submit", response_model=PurchaseOrderResponse)
+async def submit_purchase_order(
+    purchase_order_id: uuid.UUID,
+    auth: AuthContext = Depends(get_auth_context),
+    db: Session = Depends(get_db),
+) -> PurchaseOrderResponse:
+    require_roles(auth, CATALOG_ROLES, action="submit purchase orders")
+    po = po_service.submit_purchase_order(db, auth, purchase_order_id)
+    db.commit()
+    return _detail(po)
+
+
+@router.post("/{purchase_order_id}/cancel", response_model=PurchaseOrderResponse)
+async def cancel_purchase_order(
+    purchase_order_id: uuid.UUID,
+    auth: AuthContext = Depends(get_auth_context),
+    db: Session = Depends(get_db),
+) -> PurchaseOrderResponse:
+    require_roles(auth, CATALOG_ROLES, action="cancel purchase orders")
+    po = po_service.cancel_purchase_order(db, auth, purchase_order_id)
+    db.commit()
     return _detail(po)
